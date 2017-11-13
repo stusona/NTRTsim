@@ -2,13 +2,13 @@
  * Copyright © 2012, United States Government, as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All rights reserved.
- * 
+ *
  * The NASA Tensegrity Robotics Toolkit (NTRT) v1 platform is licensed
  * under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0.
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
@@ -47,16 +47,15 @@ int main(int argc, char** argv)
     std::cout << "AppSUPERball" << std::endl;
 
     // First create the ground and world
-    
+
     // Determine the angle of the ground in radians. All 0 is flat
     const double yaw = 0.0;
     const double pitch = 0.0;
-    //const double pitch = 0.0;
     const double roll = 0.0;
     const tgBoxGround::Config groundConfig(btVector3(yaw, pitch, roll));
     // the world will delete this
     tgBoxGround* ground = new tgBoxGround(groundConfig);
-    
+
     const tgWorld::Config config(98.1); // gravity, cm/sec^2  Use this to adjust length scale of world.
         // Note, by changing the setting below from 981 to 98.1, we've
         // scaled the world length scale to decimeters not cm.
@@ -64,8 +63,8 @@ int main(int argc, char** argv)
     tgWorld world(config, ground);
 
     // Second create the view
-    const double timestep_physics = 0.001; // Seconds
-    const double timestep_graphics = 1.f/60.f; // Seconds
+    const double timestep_physics = 0.0001; // Seconds
+    const double timestep_graphics = 1.f/100.f; // Seconds
     tgSimViewGraphics view(world, timestep_physics, timestep_graphics);
 
     // Third create the simulation
@@ -82,7 +81,7 @@ int main(int argc, char** argv)
 
     // Finally, add out model to the simulation
     simulation.addModel(myModel);
-    
+
     // Run until the user stops
     simulation.run();
 
