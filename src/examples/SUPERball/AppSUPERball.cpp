@@ -50,7 +50,7 @@ int main(int argc, char** argv)
     
     // Determine the angle of the ground in radians. All 0 is flat
     const double yaw = 0.0;
-    const double pitch = M_PI/15.0;
+    const double pitch = 0.0;
     //const double pitch = 0.0;
     const double roll = 0.0;
     const tgBoxGround::Config groundConfig(btVector3(yaw, pitch, roll));
