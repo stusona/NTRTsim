@@ -130,10 +130,10 @@ void T6Model::addNodes(tgStructure& s)
     // Payload is made out of 3 cylinders aligned with the 3 axes
     s.addNode(-c.payloadLength/2, 0, 0);                  // 12
     s.addNode( c.payloadLength/2, 0, 0);                  // 13
-    s.addNode(0, -c.payloadLength/2, 0);                  // 14
-    s.addNode(0,  c.payloadLength/2, 0);                  // 15
-    s.addNode(0, 0, -c.payloadLength/2);                  // 16
-    s.addNode(0, 0,  c.payloadLength/2);                  // 17
+    s.addNode(0.1, -c.payloadLength/2, 0);                  // 14
+    s.addNode(0.1,  c.payloadLength/2, 0);                  // 15
+    s.addNode(0, 0.10, -c.payloadLength/2);                  // 16
+    s.addNode(0, 0.10,  c.payloadLength/2);                  // 17
     //*/
 }
 
