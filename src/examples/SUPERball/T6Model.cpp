@@ -130,10 +130,10 @@ void T6Model::addNodes(tgStructure& s)
     // Payload is made out of 3 cylinders aligned with the 3 axes
     s.addNode(-c.payloadLength/2, 0, 0);                  // 12
     s.addNode( c.payloadLength/2, 0, 0);                  // 13
-    s.addNode(0.1, -c.payloadLength/2, 0);                  // 14
-    s.addNode(0.1,  c.payloadLength/2, 0);                  // 15
-    s.addNode(0, 0.10, -c.payloadLength/2);                  // 16
-    s.addNode(0, 0.10,  c.payloadLength/2);                  // 17
+    s.addNode(0, -c.payloadLength/2, 0);                  // 14
+    s.addNode(0,  c.payloadLength/2, 0);                  // 15
+    s.addNode(0, 0, -c.payloadLength/2);                  // 16
+    s.addNode(0, 0,  c.payloadLength/2);                  // 17
     //*/
 }
 
@@ -151,6 +151,22 @@ void T6Model::addRods(tgStructure& s)
     s.addPair(12, 13, "payload");
     s.addPair(14, 15, "payload");
     s.addPair(16, 17, "payload");
+
+    // create the 'rods' that hold the 6 payload nodes together
+    s.addPair(12, 14, "massless");
+    s.addPair(12, 15, "massless");
+    s.addPair(12, 16, "massless");
+    s.addPair(12, 17, "massless");
+
+    s.addPair(13, 14, "massless");
+    s.addPair(13, 15, "massless");
+    s.addPair(13, 16, "massless");
+    s.addPair(13, 17, "massless");
+
+    s.addPair(14, 16, "massless");
+    s.addPair(14, 17, "massless");
+    s.addPair(15, 16, "massless");
+    s.addPair(15, 17, "massless");
 }
 
 void T6Model::addActuators(tgStructure& s)
@@ -207,11 +223,18 @@ void T6Model::addActuators(tgStructure& s)
 
 void T6Model::setup(tgWorld& world)
 {
-
+    // Configure rods
     const tgRod::Config rodConfig(c.radius, c.density, c.friction,
 				c.rollFriction, c.restitution);
+
+    // configure payload elements
     const tgRod::Config payloadConfig(c.payloadRadius, c.payloadDensity,
         c.friction, c.rollFriction, c.restitution);
+
+    // configure massless elements that hold payloads together
+    const tgRod::Config masslessConfig(0.1, 0.0001, 1, 0.0001, 0);
+
+
     // @todo acceleration constraint was removed on 12/10/14
     // Replace with tgKinematicActuator as appropreate
     tgBasicActuator::Config muscleConfig(c.stiffness, c.damping, c.pretension,
@@ -225,7 +248,7 @@ void T6Model::setup(tgWorld& world)
     addRods(s);
     addActuators(s);
     // move model up to initial position
-    s.move(btVector3(0, 10, 0)); // 10 decimeters above ground
+    s.move(btVector3(0, 100, 0)); // 10 decimeters above ground
 
     // Add a rotation. This is needed if the ground slopes too much,
     // otherwise  glitches put a rod below the ground.
@@ -234,13 +257,18 @@ void T6Model::setup(tgWorld& world)
     double rotationAngle = M_PI/2;
     s.addRotation(rotationPoint, rotationAxis, rotationAngle);
 
-    // Create the build spec that uses tags to turn the structure into a real model
+    // Create the build spec that uses tags to turn the structure
+    // into a real model
     tgBuildSpec spec;
+
+    // rods
     spec.addBuilder("rod", new tgRodInfo(rodConfig));
     spec.addBuilder("muscle", new tgBasicActuatorInfo(muscleConfig));
 
+    // payload
     spec.addBuilder("payload", new tgRodInfo(payloadConfig));
     spec.addBuilder("cable", new tgBasicActuatorInfo(cableConfig));
+    spec.addBuilder("massless", new tgRodInfo(masslessConfig));
 
     // Create your structureInfo
     tgStructureInfo structureInfo(s, spec);
