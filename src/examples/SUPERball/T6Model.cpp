@@ -56,6 +56,7 @@ namespace
     // similarly, frictional parameters are for the tgRod objects.
     const struct Config
     {
+        bool   hist;
         double density;
         double radius;
         double stiffness;
@@ -66,7 +67,6 @@ namespace
         double rollFriction;
         double restitution;
         double pretension;
-        bool   hist;
         double maxTens;
         double targetVelocity;
         double payloadDensity;
@@ -77,25 +77,25 @@ namespace
         double payloadPretension;
     } c =
    {
-     0.881,    // density (kg / length^3)
-     0.0476,   // radius (length)
-     85.0,     // stiffness (kg / sec^2)
-     200.0,    // damping (kg / sec)
-     5,        // rod_length (length)
-     2.5/2,    // rod_space (length)
-     0.99,     // friction (unitless)
-     0.01,     // rollFriction (unitless)
-     0.0,      // restitution (?)
-     50.0,     // pretension
      0,	       // History logging (boolean)
+     0.881,    // rod density (kg / length^3)
+     0.0476,   // rod radius (length)
+     85.0,     // outer spring stiffness (kg / sec^2)
+     200.0,    // outer spring damping (kg / sec)
+     5,        // rod length (length)
+     2.5/2,    // rod spacing (length)
+     0.99,     // rod friction (unitless)
+     0.1,      // rod rolling friction (unitless)
+     0.8,      // outer spring restitution (unitless)
+     50.0,     // pretension of outer springs
      100000,   // maxTens
      10000,    // targetVelocity
      0.5/3,    // payloadDensity
      0.8,      // payloadLength
      0.4,      // payloadRadius
-     440.0,    // payloadStiffness
+     880.0,    // payloadStiffness
      200.0,    // payloadDamping
-     70.0,     // payloadPretension
+     140.0,    // payloadPretension
   };
 } // namespace
 
@@ -232,7 +232,7 @@ void T6Model::setup(tgWorld& world)
         c.friction, c.rollFriction, c.restitution);
 
     // configure massless elements that hold payloads together
-    const tgRod::Config masslessConfig(0.1, 0.0001, 1, 0.0001, 0);
+    const tgRod::Config masslessConfig(0.01, 0.0001, 1, 0.0001, 0);
 
 
     // @todo acceleration constraint was removed on 12/10/14
@@ -247,14 +247,15 @@ void T6Model::setup(tgWorld& world)
     addNodes(s);
     addRods(s);
     addActuators(s);
+
     // move model up to initial position
-    s.move(btVector3(0, 100, 0)); // 10 decimeters above ground
+    s.move(btVector3(0, 20, 0)); // Y direction: decimeters above ground
 
     // Add a rotation. This is needed if the ground slopes too much,
     // otherwise  glitches put a rod below the ground.
-    btVector3 rotationPoint = btVector3(0, 0, 0); // origin
-    btVector3 rotationAxis = btVector3(0, 1, 0);  // y-axis
-    double rotationAngle = M_PI/2;
+    btVector3 rotationPoint = btVector3(0, 0, 0);  // origin
+    btVector3 rotationAxis  = btVector3(1, 0, 0);  // x-axis
+    double    rotationAngle = M_PI/4;
     s.addRotation(rotationPoint, rotationAxis, rotationAngle);
 
     // Create the build spec that uses tags to turn the structure
