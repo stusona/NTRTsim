@@ -33,6 +33,9 @@
 #include "tgcreator/tgRodInfo.h"
 #include "tgcreator/tgStructure.h"
 #include "tgcreator/tgStructureInfo.h"
+#include "core/tgString.h"
+
+#include <math.h>
 
 // The Bullet Physics library
 #include "LinearMath/btVector3.h"
@@ -42,6 +45,9 @@
 
 namespace
 {
+    double sf=30; // scaling factor
+    double worldTime = 0.0; // clock for world time
+
     // see tgBasicActuator and tgRod for a descripton of these rod parameters
     // (specifically, those related to the motor moving the strings.)
     // NOTE that any parameter that depends on units of length will scale
@@ -59,12 +65,12 @@ namespace
         bool   hist;
         double density;
         double radius;
-        double stiffness;
-        double damping;
         double rod_length;
         double rod_space;
         double friction;
         double rollFriction;
+        double stiffness;
+        double damping;
         double restitution;
         double pretension;
         double maxTens;
@@ -78,24 +84,28 @@ namespace
     } c =
    {
      0,	       // History logging (boolean)
-     0.881,    // rod density (kg / length^3)
-     0.0476,   // rod radius (length)
-     85.0,     // outer spring stiffness (kg / sec^2)
-     200.0,    // outer spring damping (kg / sec)
-     5,        // rod length (length)
-     2.5/2,    // rod spacing (length)
+
+     881/pow(sf,3),    // rod density (kg / length^3)
+     0.00476*sf,   // rod radius (length)
+     0.715*sf,        // rod length (length)
+     0.715/1.618/2*sf,    // rod spacing (length)
      0.99,     // rod friction (unitless)
      0.1,      // rod rolling friction (unitless)
+
+     150.0,     // outer spring stiffness (kg / sec^2) or [N/m]
+     200.0,    // outer spring damping (kg / sec)
      0.8,      // outer spring restitution (unitless)
-     50.0,     // pretension of outer springs
-     100000,   // maxTens
-     10000,    // targetVelocity
-     0.5/3,    // payloadDensity
-     0.8,      // payloadLength
-     0.4,      // payloadRadius
-     880.0,    // payloadStiffness
-     200.0,    // payloadDamping
-     140.0,    // payloadPretension
+     20*sf,     // outer spring pretension
+     100000,   // outer sprint max tension (not sure what this means)
+
+     10,    // targetVelocity m/s (Linear Motor speed)
+
+     500.0/3/pow(sf,3),    // payload rod Density
+     0.08*sf,     // payload rod Length
+     0.04*sf,     // payload rod Radius
+     1000.0,      // payload spring Stiffness
+     200.0,       // payload spring Damping
+     10.0*sf,     // payload spring Pretension
   };
 } // namespace
 
@@ -171,54 +181,54 @@ void T6Model::addRods(tgStructure& s)
 
 void T6Model::addActuators(tgStructure& s)
 {
-    // create the 24 "muscles" between rods
-    s.addPair(0, 4,  "muscle");
-    s.addPair(0, 5,  "muscle");
-    s.addPair(0, 8,  "muscle");
-    s.addPair(0, 10, "muscle");
+    // create the 24 "muscle nums" between rods
+    s.addPair(0, 4,  tgString("muscle num", 0));
+    s.addPair(0, 5,  tgString("muscle num", 1));
+    s.addPair(0, 8,  tgString("muscle num", 2));
+    s.addPair(0, 10, tgString("muscle num", 3));
 
-    s.addPair(1, 6,  "muscle");
-    s.addPair(1, 7,  "muscle");
-    s.addPair(1, 8,  "muscle");
-    s.addPair(1, 10, "muscle");
+    s.addPair(1, 6,  tgString("muscle num", 4));
+    s.addPair(1, 7,  tgString("muscle num", 5));
+    s.addPair(1, 8,  tgString("muscle num", 6));
+    s.addPair(1, 10, tgString("muscle num", 7));
 
-    s.addPair(2, 4,  "muscle");
-    s.addPair(2, 5,  "muscle");
-    s.addPair(2, 9,  "muscle");
-    s.addPair(2, 11, "muscle");
+    s.addPair(2, 4,  tgString("muscle num", 8));
+    s.addPair(2, 5,  tgString("muscle num", 9));
+    s.addPair(2, 9,  tgString("muscle num", 10));
+    s.addPair(2, 11, tgString("muscle num", 11));
 
-    s.addPair(3, 7,  "muscle");
-    s.addPair(3, 6,  "muscle");
-    s.addPair(3, 9,  "muscle");
-    s.addPair(3, 11, "muscle");
+    s.addPair(3, 7,  tgString("muscle num", 12));
+    s.addPair(3, 6,  tgString("muscle num", 13));
+    s.addPair(3, 9,  tgString("muscle num", 14));
+    s.addPair(3, 11, tgString("muscle num", 15));
 
-    s.addPair(4, 10, "muscle");
-    s.addPair(4, 11, "muscle");
+    s.addPair(4, 10, tgString("muscle num", 16));
+    s.addPair(4, 11, tgString("muscle num", 17));
 
-    s.addPair(5, 8,  "muscle");
-    s.addPair(5, 9,  "muscle");
+    s.addPair(5, 8,  tgString("muscle num", 18));
+    s.addPair(5, 9,  tgString("muscle num", 19));
 
-    s.addPair(6, 10, "muscle");
-    s.addPair(6, 11, "muscle");
+    s.addPair(6, 10, tgString("muscle num", 20));
+    s.addPair(6, 11, tgString("muscle num", 21));
 
-    s.addPair(7, 8,  "muscle");
-    s.addPair(7, 9,  "muscle");
+    s.addPair(7, 8,  tgString("muscle num", 22));
+    s.addPair(7, 9,  tgString("muscle num", 23));
 
     // create the 12 cables between the payload and rod ends
-    s.addPair( 8, 12, "cable");
-    s.addPair(10, 12, "cable");
-    s.addPair( 9, 13, "cable");
-    s.addPair(11, 13, "cable");
+    s.addPair( 8, 12, tgString("string num", 0));
+    s.addPair(10, 12, tgString("string num", 1));
+    s.addPair( 9, 13, tgString("string num", 2));
+    s.addPair(11, 13, tgString("string num", 3));
 
-    s.addPair( 0, 14, "cable");
-    s.addPair( 2, 14, "cable");
-    s.addPair( 1, 15, "cable");
-    s.addPair( 3, 15, "cable");
+    s.addPair( 0, 14, tgString("string num", 4));
+    s.addPair( 2, 14, tgString("string num", 5));
+    s.addPair( 1, 15, tgString("string num", 6));
+    s.addPair( 3, 15, tgString("string num", 7));
 
-    s.addPair( 4, 16, "cable");
-    s.addPair( 6, 16, "cable");
-    s.addPair( 5, 17, "cable");
-    s.addPair( 7, 17, "cable");
+    s.addPair( 4, 16, tgString("string num", 8));
+    s.addPair( 6, 16, tgString("string num", 9));
+    s.addPair( 5, 17, tgString("string num", 10));
+    s.addPair( 7, 17, tgString("string num", 11));
 }
 
 void T6Model::setup(tgWorld& world)
@@ -249,7 +259,7 @@ void T6Model::setup(tgWorld& world)
     addActuators(s);
 
     // move model up to initial position
-    s.move(btVector3(0, 20, 0)); // Y direction: decimeters above ground
+    s.move(btVector3(0*sf, 10*sf, 0*sf)); // Y direction: decimeters above ground
 
     // Add a rotation. This is needed if the ground slopes too much,
     // otherwise  glitches put a rod below the ground.
@@ -268,7 +278,7 @@ void T6Model::setup(tgWorld& world)
 
     // payload
     spec.addBuilder("payload", new tgRodInfo(payloadConfig));
-    spec.addBuilder("cable", new tgBasicActuatorInfo(cableConfig));
+    spec.addBuilder("string", new tgBasicActuatorInfo(cableConfig));
     spec.addBuilder("massless", new tgRodInfo(masslessConfig));
 
     // Create your structureInfo
@@ -281,11 +291,35 @@ void T6Model::setup(tgWorld& world)
     // models (e.g. muscles) that we want to control.
     allActuators = tgCast::filter<tgModel, tgBasicActuator> (getDescendants());
 
+    // Get the actuators for controllers, allActuators = actuated outer cables, allCables include passive inner cables
+    std::vector<tgBasicActuator*> actuators = T6Model::find<tgBasicActuator>("muscle");
+    std::vector<tgBasicActuator*> innerCables = T6Model::find<tgBasicActuator>("string");
+
+    // Printing data from muscles
+    for (int i = 0; i < actuators.size(); i++) {
+      allActuators.push_back(T6Model::find<tgBasicActuator>(tgString("muscle num", i))[0]);
+      allCables.push_back(T6Model::find<tgBasicActuator>(tgString("muscle num", i))[0]);
+      // printing tensions to output file
+      sim_out << T6Model::find<tgBasicActuator>(tgString("muscle num", i))[0]->getTension() << ", ";
+    }
+
+    // Printing data from strings
+    for (int i = 0; i < innerCables.size(); i++) {
+      allCables.push_back(T6Model::find<tgBasicActuator>(tgString("string num", i))[0]);
+      sim_out << T6Model::find<tgBasicActuator>(tgString("string num", i))[0]->getTension() << ", ";
+    }
+    sim_out << std::endl;
+
     // call the onSetup methods of all observed things e.g. controllers
     notifySetup();
 
     // Actually setup the children
     tgModel::setup(world);
+
+    // open file for recording data
+    sim_out.open("outputFile.csv");
+    sim_out << "Header";
+    sim_out << std::endl;
 }
 
 void T6Model::step(double dt)
@@ -307,8 +341,16 @@ void T6Model::step(double dt)
           //std::cout << allActuators[k] -> getTension() << ", ";
         }
 
-        // print actuator tensions to terminal
-        //std::cout << allActuators[allActuators.size()-1] -> getTension() << std::endl;
+        if(fmod(worldTime, 0.01)<dt) { // print every 0.01 seconds
+          for (int i = 0; i < allCables.size(); i++) {
+            // printing tensions to output
+            sim_out << allCables[i]->getTension() << ", ";
+        }
+        sim_out << std::endl;
+        }
+
+        // increment worldTime
+        worldTime += dt;
     }
 }
 

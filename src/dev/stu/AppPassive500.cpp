@@ -1,4 +1,4 @@
-/*
+  /*
  * Copyright © 2012, United States Government, as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All rights reserved.
@@ -46,6 +46,8 @@ int main(int argc, char** argv)
 {
     std::cout << "AppSUPERball" << std::endl;
 
+    double sf=30; // scaling factor
+
     // First create the ground and world
 
     // Determine the angle of the ground in radians. All 0 is flat
@@ -56,16 +58,17 @@ int main(int argc, char** argv)
     // the world will delete this
     tgBoxGround* ground = new tgBoxGround(groundConfig);
 
-    const tgWorld::Config config(98.1); // gravity, cm/sec^2  Use this to adjust length scale of world.
+    const tgWorld::Config config(9.81*sf); // gravity, cm/sec^2  Use this to adjust length scale of world.
         // Note, by changing the setting below from 981 to 98.1, we've
         // scaled the world length scale to decimeters not cm.
 
     tgWorld world(config, ground);
 
     // Second create the view
-    const double timestep_physics = 0.0001; // Seconds
-    const double timestep_graphics = 1.f/100.f; // Seconds
-    tgSimViewGraphics view(world, timestep_physics, timestep_graphics);
+    const double timestep_physics = 0.00001; // Seconds
+    const double timestep_graphics = 1.f/60.f; // Seconds
+    //tgSimViewGraphics view(world, timestep_physics, timestep_graphics);
+    tgSimView view(world, timestep_physics, timestep_graphics);
 
     // Third create the simulation
     tgSimulation simulation(view);
@@ -83,7 +86,7 @@ int main(int argc, char** argv)
     simulation.addModel(myModel);
 
     // Run until the user stops
-    simulation.run();
+    simulation.run(5/timestep_physics);
 
     //Teardown is handled by delete, so that should be automatic
     return 0;
