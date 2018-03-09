@@ -54,11 +54,6 @@ namespace
     // with the current gravity scaling. E.g., with gravity as 98.1,
     // the length units below are in decimeters.
 
-    // Note: This current model of the SUPERball rod is 1.5m long by 3 cm radius,
-    // which is 0.00424 m^3.
-    // For SUPERball v1.5, mass = 3.5kg per strut, which comes out to
-    // 0.825 kg / (decimeter^3).
-
     // similarly, frictional parameters are for the tgRod objects.
     const struct Config
     {
@@ -79,34 +74,32 @@ namespace
         double payloadLength;
         double payloadRadius;
         double payloadStiffness;
-        double payloadDamping;
         double payloadPretension;
     } c =
-   {
-     0,	       // History logging (boolean)
+      {
+        0,	             // History logging (boolean)
 
-     881/pow(sf,3),    // rod density (kg / length^3)
-     0.00476*sf,   // rod radius (length)
-     0.715*sf,        // rod length (length)
-     0.715/1.618/2*sf,    // rod spacing (length)
-     0.99,     // rod friction (unitless)
-     0.1,      // rod rolling friction (unitless)
+        881.33/pow(sf,3),   // rod density (kg/m^3)
+        0.00476*sf,      // rod radius (m)
+        0.715*sf,        // rod length (m)
+        0.715/1.62/2*sf, // rod spacing (m)
+        0.99,            // rod friction (unitless)
+        0.1,             // rod rolling friction (unitless)
 
-     150.0,     // outer spring stiffness (kg / sec^2) or [N/m]
-     200.0,    // outer spring damping (kg / sec)
-     0.8,      // outer spring restitution (unitless)
-     20*sf,     // outer spring pretension
-     100000,   // outer sprint max tension (not sure what this means)
+        388.0,    // outer spring stiffness (kg/s^2) or [N/m]
+        200.0,    // outer spring damping (kg/s)
+        0.8,      // outer spring restitution (unitless)
+        40.0*sf,  // outer spring pretension
+        100000,   // outer spring max tension (not sure what this means)
 
-     10,    // targetVelocity m/s (Linear Motor speed)
+        10,       // targetVelocity m/s (Linear Motor speed)
 
-     500.0/3/pow(sf,3),    // payload rod Density
-     0.08*sf,     // payload rod Length
-     0.04*sf,     // payload rod Radius
-     1000.0,      // payload spring Stiffness
-     200.0,       // payload spring Damping
-     10.0*sf,     // payload spring Pretension
-  };
+        436.6/3/pow(sf,3),// payload rod Density (kg/m^3)
+        0.09*sf,     // payload rod Length (m)
+        0.045*sf,    // payload rod Radius (m)
+        388.0,       // payload spring Stiffness (kg/s^2) or (N/m)
+        30.0*sf,     // payload spring Pretension
+      }; // c
 } // namespace
 
 T6Model::T6Model() : tgModel()
@@ -149,15 +142,15 @@ void T6Model::addNodes(tgStructure& s)
 
 void T6Model::addRods(tgStructure& s)
 {
-    // create the 6 rods
-    s.addPair( 0,  1, "rod");
-    s.addPair( 2,  3, "rod");
-    s.addPair( 4,  5, "rod");
-    s.addPair( 6,  7, "rod");
-    s.addPair( 8,  9, "rod");
-    s.addPair(10, 11, "rod");
+    // create the 6 main rods
+    s.addPair( 0,  1, "rod"); // 0
+    s.addPair( 2,  3, "rod"); // 1
+    s.addPair( 4,  5, "rod"); // 2
+    s.addPair( 6,  7, "rod"); // 3
+    s.addPair( 8,  9, "rod"); // 4
+    s.addPair(10, 11, "rod"); // 5
 
-    // create the 3 payloads
+    // create the 3 payloads 'rods'
     s.addPair(12, 13, "payload");
     s.addPair(14, 15, "payload");
     s.addPair(16, 17, "payload");
@@ -242,14 +235,12 @@ void T6Model::setup(tgWorld& world)
         c.friction, c.rollFriction, c.restitution);
 
     // configure massless elements that hold payloads together
-    const tgRod::Config masslessConfig(0.01, 0.0001, 1, 0.0001, 0);
+    const tgRod::Config masslessConfig(0.01, 0.0001, 0.99, 0.0001, 0.9);
 
-
-    // @todo acceleration constraint was removed on 12/10/14
-    // Replace with tgKinematicActuator as appropreate
+    // Configure cables
     tgBasicActuator::Config muscleConfig(c.stiffness, c.damping, c.pretension,
         c.hist, c.maxTens, c.targetVelocity);
-    tgBasicActuator::Config cableConfig(c.payloadStiffness, c.payloadDamping,
+    tgBasicActuator::Config cableConfig(c.payloadStiffness, c.damping,
         c.payloadPretension, c.hist, c.maxTens, c.targetVelocity);
 
     // Start creating the structure
@@ -259,13 +250,13 @@ void T6Model::setup(tgWorld& world)
     addActuators(s);
 
     // move model up to initial position
-    s.move(btVector3(0*sf, 10*sf, 0*sf)); // Y direction: decimeters above ground
+    s.move(btVector3(0*sf, 10*sf, 0*sf)); // Y direction: meters above ground
 
     // Add a rotation. This is needed if the ground slopes too much,
-    // otherwise  glitches put a rod below the ground.
+    // otherwise glitches put a rod below the ground.
     btVector3 rotationPoint = btVector3(0, 0, 0);  // origin
     btVector3 rotationAxis  = btVector3(1, 0, 0);  // x-axis
-    double    rotationAngle = M_PI/4;
+    double    rotationAngle = 0;
     s.addRotation(rotationPoint, rotationAxis, rotationAngle);
 
     // Create the build spec that uses tags to turn the structure
@@ -280,6 +271,7 @@ void T6Model::setup(tgWorld& world)
     spec.addBuilder("payload", new tgRodInfo(payloadConfig));
     spec.addBuilder("string", new tgBasicActuatorInfo(cableConfig));
     spec.addBuilder("massless", new tgRodInfo(masslessConfig));
+    //*/
 
     // Create your structureInfo
     tgStructureInfo structureInfo(s, spec);
@@ -335,17 +327,13 @@ void T6Model::step(double dt)
         notifyStep(dt);
         tgModel::step(dt);  // Step any children
 
-        // std::cout << allActuators.size() << std::endl;
-        for (int k = 0; k < allActuators.size()-1; k++) {
-          //std::cout << k << ": " << actuators[k]->getTension() << ", ";
-          //std::cout << allActuators[k] -> getTension() << ", ";
-        }
-
-        if(fmod(worldTime, 0.01)<dt) { // print every 0.01 seconds
-          for (int i = 0; i < allCables.size(); i++) {
+        if(fmod(worldTime, 0.01)<dt)  // print every 0.01 seconds
+        {
+          for (int i = 0; i < allCables.size(); i++)
+          {
             // printing tensions to output
             sim_out << allCables[i]->getTension() << ", ";
-        }
+          }
         sim_out << std::endl;
         }
 
